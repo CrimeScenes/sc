@@ -1,5 +1,5 @@
   if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 then
-                print("bypassed lol:?")
+               
                  
 
                 if shared.Global.Memory.Settings.Enabled == true then
