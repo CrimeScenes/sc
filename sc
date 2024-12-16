@@ -1,4 +1,4 @@
-if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 then
+if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId == 7213786345 then
                 
 
                 if shared.Global.Memory.Settings.Enabled == true then
@@ -311,6 +311,7 @@ local whitelist = shared.Global.Core.Checks.Whitelist
 
 local FIRST_PERSON_THRESHOLD = 5 
 local THIRD_PERSON_THRESHOLD = 10 
+local DETECTION_SCALE = 0.4
 
 
 local function IsFirstPerson()
@@ -340,26 +341,29 @@ end
 RunService.RenderStepped:Connect(UpdateFOV)
 
 local function ClosestPlrFromMouse()
- local Target, Closest = nil, math.huge
- local enabled = shared.Global.Core.Enabled
- local whitelist = shared.Global.Core.Checks.Whitelist
+    local Target, Closest = nil, math.huge
+    local enabled = shared.Global.Core.Enabled
+    local whitelist = shared.Global.Core.Checks.Whitelist
 
- for _, player in pairs(Players:GetPlayers()) do
-     if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-         if enabled and table.find(whitelist, player.Name) then
-             break
-         end
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            if enabled and table.find(whitelist, player.Name) then
+                break
+            end
 
-         local Position, OnScreen = Camera:WorldToScreenPoint(player.Character.HumanoidRootPart.Position)
-         local Distance = (Vector2.new(Position.X, Position.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
+            local Position, OnScreen = Camera:WorldToScreenPoint(player.Character.HumanoidRootPart.Position)
+            local Distance = (Vector2.new(Position.X, Position.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
 
-         if Distance < Closest and OnScreen then
-             Closest = Distance
-             Target = player
-         end
-     end
- end
- return Target
+         
+            Distance = Distance * DETECTION_SCALE
+
+            if Distance < Closest and OnScreen then
+                Closest = Distance
+                Target = player
+            end
+        end
+    end
+    return Target
 end
 
 local function GetClosestBodyPart(character)
@@ -413,41 +417,46 @@ local function IsTargetVisible(targetPlayer, bodyPart)
 end
  
 Mouse.KeyDown:Connect(function(Key)
- local key = Key:lower()
+    local key = Key:lower()
 
- if key == shared.Global.Core.Keybind:lower() then
-     if shared.Global.Camera.Enabled then
-         if IsTargeting then
-             if TargetPlayer and TargetPlayer.Character and TargetPlayer.Character:FindFirstChildOfClass("Humanoid") then
-                 if TargetPlayer.Character.Humanoid.Health >= 1 then
-                     if ClosestPlrFromMouse() == TargetPlayer then
+    if key == shared.Global.Core.Keybind:lower() then
+        if shared.Global.Camera.Enabled then
+            
+            if IsTargeting then
+              
+                if TargetPlayer and TargetPlayer.Character and TargetPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                    if TargetPlayer.Character.Humanoid.Health >= 1 then
                         
-                     else
-                         local newTarget = ClosestPlrFromMouse()
-                         if newTarget and newTarget.Character and newTarget.Character:FindFirstChildOfClass("Humanoid").Health >= 1 then
-                             TargetPlayer = newTarget
-                         end
-                     end
-                 else
-                     TargetPlayer = nil
-                     IsTargeting = false
-                 end
-             end
-         else
-             local initialTarget = ClosestPlrFromMouse()
-             if initialTarget and initialTarget.Character and initialTarget.Character:FindFirstChildOfClass("Humanoid").Health >= 1 then
-                 IsTargeting = true
-                 TargetPlayer = initialTarget
-             end
-         end
-     end
- end
+                        if ClosestPlrFromMouse() ~= TargetPlayer then
+                            local newTarget = ClosestPlrFromMouse()
+                            if newTarget and newTarget.Character and newTarget.Character:FindFirstChildOfClass("Humanoid").Health >= 1 then
+                                TargetPlayer = newTarget 
+                            end
+                        end
+                    else
+                     
+                        TargetPlayer = nil
+                        IsTargeting = false
+                    end
+                end
+            else
+               
+                local initialTarget = ClosestPlrFromMouse()
+                if initialTarget and initialTarget.Character and initialTarget.Character:FindFirstChildOfClass("Humanoid").Health >= 1 then
+                    IsTargeting = true
+                    TargetPlayer = initialTarget
+                end
+            end
+        end
+    end
 
- if key == shared.Global.Core.Cancel:lower() then  
-     IsTargeting = false
-     TargetPlayer = nil
- end
+   
+    if key == shared.Global.Core.Cancel:lower() then  
+        IsTargeting = false
+        TargetPlayer = nil
+    end
 end)
+
 
 local function IsAlignedWithCamera(targetPlayer)
  if targetPlayer and targetPlayer.Character then
@@ -466,16 +475,22 @@ local function GetDistanceFromMouse(bodyPart)
 end
 
 RunService.RenderStepped:Connect(function()
+    
     if IsTargeting and TargetPlayer and TargetPlayer.Character then
-        if TargetPlayer.Character:FindFirstChildOfClass("Humanoid") and TargetPlayer.Character.Humanoid.Health < 2 then
+        local humanoid = TargetPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid and humanoid.Health < 1 then
+          
             TargetPlayer = nil
             IsTargeting = false
             return
         end
 
+       
         if shared.Global.Camera.Enabled then
+        
             if shared.Global.Camera.MouseButton2 then
                 if isRightMouseButtonDown then
+                  
                     if shared.Global.Camera.Configurations.ThirdPerson == false then
                         if IsFirstPerson() then
                             if IsAlignedWithCamera(TargetPlayer) then
@@ -524,15 +539,17 @@ RunService.RenderStepped:Connect(function()
                                             ))
                                         end
 
-                                        if predictedPosition then
-                                         
-                                            local currentPosition = Camera.CFrame.Position
+                                        
+                                        if shared.Global.Camera.Configurations.Value == 0 then
+                                            return 
+                                        end
 
-                                         
+                                        if predictedPosition then
+                                            local currentPosition = Camera.CFrame.Position
                                             local randomness = math.random(95, 105) / 100
                                             local smoothFactor = shared.Global.Camera.Configurations.Value * randomness
 
-                                            
+                                          
                                             local DesiredCFrame = CFrame.new(currentPosition, predictedPosition)
                                             Camera.CFrame = Camera.CFrame:Lerp(DesiredCFrame, smoothFactor)
                                         end
@@ -543,6 +560,7 @@ RunService.RenderStepped:Connect(function()
                     end
                 end
             else
+               
                 if shared.Global.Camera.Configurations.ThirdPerson == false then
                     if IsFirstPerson() then
                         if IsAlignedWithCamera(TargetPlayer) then
@@ -591,11 +609,13 @@ RunService.RenderStepped:Connect(function()
                                         ))
                                     end
 
-                                    if predictedPosition then
-                                        
-                                        local currentPosition = Camera.CFrame.Position
+                                    
+                                    if shared.Global.Camera.Configurations.Value == 0 then
+                                        return 
+                                    end
 
-                                        
+                                    if predictedPosition then
+                                        local currentPosition = Camera.CFrame.Position
                                         local randomness = math.random(95, 105) / 100
                                         local smoothFactor = shared.Global.Camera.Configurations.Value * randomness
 
@@ -612,6 +632,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
+
 
 
 
@@ -1889,3 +1910,4 @@ end)
              end
              
          end
+                
