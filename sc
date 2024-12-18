@@ -1,4 +1,4 @@
-         if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId == 7213786345 then
+  if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId == 7213786345 then
                 
 
 
@@ -13,7 +13,8 @@
                     
                     local target = mouse.Target
                    
-                   if target and target.Parent and (target.Parent.Name == "Snow" or target.Parent.Name == "Indestructible") then
+                    if target and target.Parent and (target.Parent.Name == "Snow" or target.Parent.Name == "Indestructible") then
+
 
 
 
@@ -61,6 +62,40 @@
                  end
                  
                  
+
+
+                 local UserInputService = game:GetService("UserInputService")
+                 local Players = game:GetService("Players")
+                 
+                
+                 local function hopServers()
+                     local player = Players.LocalPlayer
+                     if player then
+                       
+                         game:GetService("TeleportService"):Teleport(game.PlaceId, player)
+                     end
+                 end
+                 
+               
+                 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+                     
+                     if gameProcessedEvent then return end
+                 
+                   
+                     if shared.Global['Rejoin']['Enabled'] and input.UserInputType == Enum.UserInputType.Keyboard then
+                         if input.KeyCode.Name == shared.Global['Rejoin']['Keybind'] then
+                            
+                             wait(shared.Global['Rejoin']['Duration'])
+                            
+                             hopServers()
+                         end
+                     end
+                 end)
+
+
+
+
+
                  
                  local UserInputService = game:GetService('UserInputService')
            
@@ -373,7 +408,7 @@
                  
                  local FIRST_PERSON_THRESHOLD = 5 
                  local THIRD_PERSON_THRESHOLD = 10 
-                 local DETECTION_SCALE = 0.1
+                 local DETECTION_SCALE = 0.25
                  
                  
                  local function IsFirstPerson()
