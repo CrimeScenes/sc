@@ -374,7 +374,7 @@
                  
                  local FIRST_PERSON_THRESHOLD = 5 
                  local THIRD_PERSON_THRESHOLD = 10 
-                 local DETECTION_SCALE = 0.25
+                 local DETECTION_SCALE = 0.1
                  
                  
                  local function IsFirstPerson()
