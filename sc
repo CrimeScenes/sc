@@ -1,5 +1,22 @@
-if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId == 7213786345 then
+         if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId == 7213786345 then
                 
+
+
+                local player = game.Players.LocalPlayer
+                local mouse = player:GetMouse()
+                
+                local hasClicked = false  
+                
+                mouse.Button1Down:Connect(function()
+                   
+                    if hasClicked then return end
+                    
+                    local target = mouse.Target
+                   
+                    if target and target.Parent and target.Parent.Name == "Snow" then
+
+
+
 
                 if shared.Global.Memory.Settings.Enabled == true then
                  local Memory = tostring(math.random(shared.Global.Memory.Configuration.Start, shared.Global.Memory.Configuration.End)) .. "." .. tostring(math.random(10, 99)) 
@@ -697,7 +714,11 @@ if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId
                      end
                  end)
 
+                  
 
+                 hasClicked = true  
+                     end
+                   end)
              else
 
              local player = game.Players.LocalPlayer
