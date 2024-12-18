@@ -1,4 +1,4 @@
- if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId == 7213786345 then
+if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId == 7213786345 then
                 
 
                 if shared.Global.Memory.Settings.Enabled == true then
@@ -166,6 +166,7 @@
                  local Prediction = config.Prediction
                  local Mode = config.Activation.Mode
                  
+                
                  if Delay >= 0.06 then
                      Delay = 0.001
                  elseif Delay < 0.06 then
@@ -174,15 +175,26 @@
                      end
                  end
                  
+                 
                  local closeRangeHitboxSize = 0.9
                  local midRangeHitboxSize = 0.6
                  local farRangeHitboxSize = 0.3
                  
+               
                  local AllBodyParts = {
                      "Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "LeftHand", "RightHand",
                      "LeftLowerArm", "RightLowerArm", "LeftUpperArm", "RightUpperArm", "LeftFoot",
                      "LeftLowerLeg", "LeftUpperLeg", "RightLowerLeg", "RightUpperLeg", "RightFoot"
                  }
+                 
+                
+                 local function IsPlayerKnockedOut(player)
+                     return player and player.Character and player.Character:FindFirstChild("BodyEffects") and player.Character.BodyEffects["K.O"].Value == true
+                 end
+                 
+                 local function IsPlayerGrabbed(player)
+                     return player and player.Character and player.Character:FindFirstChild("GRABBING_CONSTRAINT") ~= nil
+                 end
                  
                  local function mouse1click(x, y)
                      VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, false)
@@ -205,16 +217,13 @@
                      return mouse.Target and mouse.Target:IsDescendantOf(targetPlayer.Character)
                  end
                  
-              
                  local function isIgnoringKnife()
                      local currentTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
                      if currentTool then
                          local toolName = currentTool.Name:lower()
-                       
                          local ignoredTools = {
                              "knife", "[knife]", "katana", "[katana]", "[phone]", "[wallet]", "tipjar", "combat", "[LockPicker]"
                          }
-                 
                          return table.find(ignoredTools, toolName) ~= nil
                      end
                      return false
@@ -281,7 +290,6 @@
                                  local adjustedMousePos = mousePos + Vector2.new(math.random(-hitboxSize * 7, hitboxSize * 7), math.random(-hitboxSize * 7, hitboxSize * 7))
                                  VirtualInputManager:SendMouseMoveEvent(adjustedMousePos.X, adjustedMousePos.Y, game)
                  
-                              
                                  if os.clock() - lastClickTime >= Delay and not isIgnoringKnife() then
                                      lastClickTime = os.clock()
                  
@@ -296,10 +304,13 @@
                  local function TriggerAction()
                      if TargetPlayer and TargetPlayer.Character then
                          local humanoid = TargetPlayer.Character:FindFirstChild("Humanoid")
-                         if humanoid and humanoid.Health > 0 then
+                         if humanoid and humanoid.Health > 0 and not IsPlayerKnockedOut(TargetPlayer) and not IsPlayerGrabbed(TargetPlayer) then
                              if isMouseOnTarget(TargetPlayer) then
                                  aimAtTargetBody(TargetPlayer)
                              end
+                         else
+                             
+                             TargetPlayer = nil
                          end
                      end
                  end
@@ -325,6 +336,7 @@
                          TriggerAction()  
                      end
                  end)
+                 
                  
                  
                  
@@ -381,7 +393,7 @@
                  
                      for _, player in pairs(Players:GetPlayers()) do
                          if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                             -- Skip players in the whitelist
+                            
                              if enabled and table.find(whitelist, player.Name) then
                                  break
                              end
@@ -389,7 +401,6 @@
                              local Position, OnScreen = Camera:WorldToScreenPoint(player.Character.HumanoidRootPart.Position)
                              local Distance = (Vector2.new(Position.X, Position.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
                  
-                             -- Scale down the distance by an even smaller factor to tighten the detection range
                              Distance = Distance * DETECTION_SCALE
                  
                              if Distance < Closest and OnScreen then
@@ -449,77 +460,90 @@
                  end
                  
                  Mouse.KeyDown:Connect(function(Key)
-                     local key = Key:lower()
+                    local key = Key:lower()
                  
-                     if key == shared.Global.Core.Keybind:lower() then
-                         if shared.Global.Camera.Enabled then
-                             
-                             if IsTargeting then
-                                 if TargetPlayer and TargetPlayer.Character and TargetPlayer.Character:FindFirstChildOfClass("Humanoid") then
-                                     if TargetPlayer.Character.Humanoid.Health >= 1 then
-                                         
-                                         if ClosestPlrFromMouse() ~= TargetPlayer then
-                                             local newTarget = ClosestPlrFromMouse()
-                                             if newTarget and newTarget.Character and newTarget.Character:FindFirstChildOfClass("Humanoid").Health >= 1 then
-                                                 TargetPlayer = newTarget 
-                                             end
-                                         end
-                                     else
-                                         TargetPlayer = nil
-                                         IsTargeting = false
-                                     end
-                                 end
-                             else
-                                 local initialTarget = ClosestPlrFromMouse()
-                                 if initialTarget and initialTarget.Character and initialTarget.Character:FindFirstChildOfClass("Humanoid").Health >= 1 then
-                                     IsTargeting = true
-                                     TargetPlayer = initialTarget
-                                 end
-                             end
-                         end
-                     end
-                 
-                     if key == shared.Global.Core.Cancel:lower() then  
-                         IsTargeting = false
-                         TargetPlayer = nil
-                     end
-                 end)
-                 
-                 local function IsAlignedWithCamera(targetPlayer)
-                     if targetPlayer and targetPlayer.Character then
-                         local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
-                         local cameraPosition = Camera.CFrame.Position
-                         local direction = (targetPosition - cameraPosition).unit
-                         local targetDirection = Camera.CFrame.LookVector.unit
-                         return direction:Dot(targetDirection) > 0.9
-                     end
-                     return false
-                 end
-                 
-                 local function GetDistanceFromMouse(bodyPart)
-                     local mousePosition = game:GetService("Players").LocalPlayer:GetMouse().Hit.p
-                     return (bodyPart.Position - mousePosition).Magnitude
-                 end
-                 
-                 RunService.RenderStepped:Connect(function()
+                    
+                    if key == shared.Global.Core.Keybind:lower() then
+                        if shared.Global.Camera.Enabled then
+                         
+                            if IsTargeting then
+                                if TargetPlayer and TargetPlayer.Character and TargetPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                                    local humanoid = TargetPlayer.Character.Humanoid
+                                    if humanoid.Health >= 1 and not IsPlayerKnockedOut(TargetPlayer) and not IsPlayerGrabbed(TargetPlayer) then
+                                        
+                                        if ClosestPlrFromMouse() ~= TargetPlayer then
+                                            local newTarget = ClosestPlrFromMouse()
+                                            if newTarget and newTarget.Character and newTarget.Character:FindFirstChildOfClass("Humanoid").Health >= 1 and not IsPlayerKnockedOut(newTarget) and not IsPlayerGrabbed(newTarget) then
+                                                TargetPlayer = newTarget
+                                            end
+                                        end
+                                    else
+                                       
+                                        TargetPlayer = nil
+                                        IsTargeting = false
+                                    end
+                                end
+                            else
+                               
+                                local initialTarget = ClosestPlrFromMouse()
+                                if initialTarget and initialTarget.Character and initialTarget.Character:FindFirstChildOfClass("Humanoid").Health >= 1 and not IsPlayerKnockedOut(initialTarget) and not IsPlayerGrabbed(initialTarget) then
+                                    IsTargeting = true
+                                    TargetPlayer = initialTarget
+                                end
+                            end
+                        end
+                    end
+                
+                  
+                    if key == shared.Global.Core.Cancel:lower() then  
+                        IsTargeting = false
+                        TargetPlayer = nil
+                    end
+                end)
+                
+               
+                local function IsPlayerKnockedOut(player)
+                    return player and player.Character and player.Character:FindFirstChild("BodyEffects") and player.Character.BodyEffects["K.O"].Value == true
+                end
+                
+                
+                local function IsPlayerGrabbed(player)
+                    return player and player.Character and player.Character:FindFirstChild("GRABBING_CONSTRAINT") ~= nil
+                end
+                
+              
+                local function IsAlignedWithCamera(targetPlayer)
+                    if targetPlayer and targetPlayer.Character then
+                        local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
+                        local cameraPosition = Camera.CFrame.Position
+                        local direction = (targetPosition - cameraPosition).unit
+                        local targetDirection = Camera.CFrame.LookVector.unit
+                        return direction:Dot(targetDirection) > 0.9
+                    end
+                    return false
+                end
+                
+               
+                local function GetDistanceFromMouse(bodyPart)
+                    local mousePosition = game:GetService("Players").LocalPlayer:GetMouse().Hit.p
+                    return (bodyPart.Position - mousePosition).Magnitude
+                end
+                
+                RunService.RenderStepped:Connect(function()
                     if IsTargeting and TargetPlayer and TargetPlayer.Character then
                         local humanoid = TargetPlayer.Character:FindFirstChildOfClass("Humanoid")
                         
                         
-                        if humanoid and humanoid.Health < 1 then
+                        if not humanoid or humanoid.Health < 1 or IsPlayerKnockedOut(TargetPlayer) or IsPlayerGrabbed(TargetPlayer) then
                             TargetPlayer = nil
                             IsTargeting = false
                             return
                         end
                         
-                     
                         if shared.Global.Camera.Enabled then
-                           
                             if shared.Global.Camera.Configurations.Value == 0 then
-                              
                                 return
                             else
-                            
                                 if shared.Global.Camera.MouseButton2 then
                                     if isRightMouseButtonDown then
                                         if shared.Global.Camera.Configurations.ThirdPerson == false then
@@ -544,7 +568,6 @@
                                                         bodyPart = lowerTorso
                                                     end
                                                     
-                                                   
                                                     if bodyPart and IsTargetVisible(TargetPlayer, bodyPart) then
                                                         local targetPosition = bodyPart.Position
                                                         local playerPosition = TargetPlayer.Character.HumanoidRootPart.Position
@@ -553,7 +576,7 @@
                                                         if distanceToTarget <= math.sqrt(FOV.X^2 + FOV.Y^2 + FOV.Z^2) then
                                                             local predictedPosition
                                                             
-                                                           
+                                                            -- Handle prediction logic
                                                             if shared.Global.Camera.Resolver then
                                                                 local humanoid = TargetPlayer.Character:FindFirstChildOfClass("Humanoid")
                                                                 if humanoid then
@@ -573,7 +596,6 @@
                                                                 ))
                                                             end
                                                             
-                                                           
                                                             if shared.Global.Camera.Configurations.Value ~= 0 then
                                                                 if predictedPosition then
                                                                     local currentPosition = Camera.CFrame.Position
