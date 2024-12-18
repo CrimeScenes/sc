@@ -13,8 +13,7 @@
                     
                     local target = mouse.Target
                    
-                    if target and target.Parent and target.Parent.Name == "Snow" then
-
+                   if target and target.Parent and (target.Parent.Name == "Snow" or target.Parent.Name == "Indestructible") then
 
 
 
