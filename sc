@@ -308,43 +308,38 @@ if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId
                             local currentFOV = updateFOVBasedOnRange(distance)
                             local hitboxSize = calculateHitboxSize(distance)
                 
-                         
                             local predictedPos = predictTargetPosition(targetPlayer, 0.1)
-                            
-                          
+                
                             local screenPos, onScreen = Camera:WorldToViewportPoint(predictedPos)
-                            
+                
                             if onScreen and isWithinBox(predictedPos) then
-                             
                                 local mousePos = Vector2.new(screenPos.X, screenPos.Y)
                 
-                               
+                                -- Adding jitter for randomness
                                 local jitter = Vector2.new(
                                     math.random(-hitboxSize * 2, hitboxSize * 2),
                                     math.random(-hitboxSize * 2, hitboxSize * 2)
                                 )
                                 local adjustedMousePos = mousePos + jitter
                                 
-                             
+                                -- Calculate move speed and smoothing, but don't change the mouse position directly
                                 local currentMousePosX, currentMousePosY = getMousePosition()
                                 local moveSpeed = 0.1  
                 
-                               
                                 local newX = currentMousePosX + (adjustedMousePos.X - currentMousePosX) * moveSpeed
                                 local newY = currentMousePosY + (adjustedMousePos.Y - currentMousePosY) * moveSpeed
-                                
-                             
+                
+                                -- Ensure the mouse doesn't go out of bounds
                                 newX = math.clamp(newX, 0, Camera.ViewportSize.X)
                                 newY = math.clamp(newY, 0, Camera.ViewportSize.Y)
-                                
-                              
-                                VirtualInputManager:SendMouseMoveEvent(newX, newY, game)
                 
-                                
+                                -- Here, instead of directly setting the mouse position, you can just use the calculated `newX` and `newY`
+                                -- Without calling SendMouseMoveEvent, you can let other systems handle the mouse position update
+                
+                                -- Optional: if you still want to simulate shooting
                                 if os.clock() - lastClickTime >= Delay and not isIgnoringKnife() then
                                     lastClickTime = os.clock()
                 
-                                    
                                     local mouseX, mouseY = getMousePosition()
                                     mouse1click(mouseX, mouseY)
                                 end
@@ -352,6 +347,7 @@ if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId
                         end
                     end
                 end
+                
                 
                 
                  
