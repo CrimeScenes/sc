@@ -1,4 +1,4 @@
-if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId == 7213786345 then
+ if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId == 7213786345 then
                 
 
 
@@ -172,13 +172,13 @@ if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId
 
 
                  
-                 
                  local Players = game:GetService("Players")
                  local LocalPlayer = Players.LocalPlayer
                  local Camera = game:GetService("Workspace").CurrentCamera
                  local UserInputService = game:GetService("UserInputService")
                  local RunService = game:GetService("RunService")
                  local VirtualInputManager = game:GetService("VirtualInputManager")
+                 
                  local lastClickTime = 0
                  local isToggled = false
                  local TargetPlayer = nil
@@ -191,7 +191,6 @@ if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId
                  local Prediction = config.Prediction
                  local Mode = config.Activation.Mode
                  
-                
                  if Delay >= 0.06 then
                      Delay = 0.001
                  elseif Delay < 0.06 then
@@ -200,19 +199,30 @@ if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId
                      end
                  end
                  
-                 
                  local closeRangeHitboxSize = 0.9
                  local midRangeHitboxSize = 0.6
                  local farRangeHitboxSize = 0.3
                  
-               
                  local AllBodyParts = {
                      "Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "LeftHand", "RightHand",
                      "LeftLowerArm", "RightLowerArm", "LeftUpperArm", "RightUpperArm", "LeftFoot",
                      "LeftLowerLeg", "LeftUpperLeg", "RightLowerLeg", "RightUpperLeg", "RightFoot"
                  }
                  
-                
+                 -- Improved Knife Detection
+                 local function isUsingKnife()
+                     local currentTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                     if currentTool then
+                         local toolName = currentTool.Name:lower()
+                         -- Add more knife-related tools to ignore here
+                         local ignoredTools = {
+                            "knife", "[knife]", "katana", "[katana]", "[phone]", "[wallet]", "tipjar", "combat", "[LockPicker]"
+                         }
+                         return table.find(ignoredTools, toolName) ~= nil
+                     end
+                     return false
+                 end
+                 
                  local function IsPlayerKnockedOut(player)
                      return player and player.Character and player.Character:FindFirstChild("BodyEffects") and player.Character.BodyEffects["K.O"].Value == true
                  end
@@ -240,18 +250,6 @@ if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId
                  local function isMouseOnTarget(targetPlayer)
                      local mouse = LocalPlayer:GetMouse()
                      return mouse.Target and mouse.Target:IsDescendantOf(targetPlayer.Character)
-                 end
-                 
-                 local function isIgnoringKnife()
-                     local currentTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                     if currentTool then
-                         local toolName = currentTool.Name:lower()
-                         local ignoredTools = {
-                             "knife", "[knife]", "katana", "[katana]", "[phone]", "[wallet]", "tipjar", "combat", "[LockPicker]"
-                         }
-                         return table.find(ignoredTools, toolName) ~= nil
-                     end
-                     return false
                  end
                  
                  local function getVelocity(player)
@@ -299,57 +297,48 @@ if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId
                  end
                  
                  local function aimAtTargetBody(targetPlayer)
-                    for _, bodyPartName in pairs(AllBodyParts) do
-                        local bodyPart = targetPlayer.Character:FindFirstChild(bodyPartName)
-                        if bodyPart and bodyPart:IsDescendantOf(targetPlayer.Character) then
-                            local targetPos = bodyPart.Position
-                            local distance = (targetPos - Camera.CFrame.Position).Magnitude
-                
-                            local currentFOV = updateFOVBasedOnRange(distance)
-                            local hitboxSize = calculateHitboxSize(distance)
-                
-                            local predictedPos = predictTargetPosition(targetPlayer, 0.1)
-                
-                            local screenPos, onScreen = Camera:WorldToViewportPoint(predictedPos)
-                
-                            if onScreen and isWithinBox(predictedPos) then
-                                local mousePos = Vector2.new(screenPos.X, screenPos.Y)
-                
-                                -- Adding jitter for randomness
-                                local jitter = Vector2.new(
-                                    math.random(-hitboxSize * 2, hitboxSize * 2),
-                                    math.random(-hitboxSize * 2, hitboxSize * 2)
-                                )
-                                local adjustedMousePos = mousePos + jitter
-                                
-                                -- Calculate move speed and smoothing, but don't change the mouse position directly
-                                local currentMousePosX, currentMousePosY = getMousePosition()
-                                local moveSpeed = 0.1  
-                
-                                local newX = currentMousePosX + (adjustedMousePos.X - currentMousePosX) * moveSpeed
-                                local newY = currentMousePosY + (adjustedMousePos.Y - currentMousePosY) * moveSpeed
-                
-                                -- Ensure the mouse doesn't go out of bounds
-                                newX = math.clamp(newX, 0, Camera.ViewportSize.X)
-                                newY = math.clamp(newY, 0, Camera.ViewportSize.Y)
-                
-                                -- Here, instead of directly setting the mouse position, you can just use the calculated `newX` and `newY`
-                                -- Without calling SendMouseMoveEvent, you can let other systems handle the mouse position update
-                
-                                -- Optional: if you still want to simulate shooting
-                                if os.clock() - lastClickTime >= Delay and not isIgnoringKnife() then
-                                    lastClickTime = os.clock()
-                
-                                    local mouseX, mouseY = getMousePosition()
-                                    mouse1click(mouseX, mouseY)
-                                end
-                            end
-                        end
-                    end
-                end
-                
-                
-                
+                     for _, bodyPartName in pairs(AllBodyParts) do
+                         local bodyPart = targetPlayer.Character:FindFirstChild(bodyPartName)
+                         if bodyPart and bodyPart:IsDescendantOf(targetPlayer.Character) then
+                             local targetPos = bodyPart.Position
+                             local distance = (targetPos - Camera.CFrame.Position).Magnitude
+                 
+                             local currentFOV = updateFOVBasedOnRange(distance)
+                             local hitboxSize = calculateHitboxSize(distance)
+                 
+                             local predictedPos = predictTargetPosition(targetPlayer, 0.1)
+                 
+                             local screenPos, onScreen = Camera:WorldToViewportPoint(predictedPos)
+                 
+                             if onScreen and isWithinBox(predictedPos) then
+                                 local mousePos = Vector2.new(screenPos.X, screenPos.Y)
+                 
+                                 local jitter = Vector2.new(
+                                     math.random(-hitboxSize * 2, hitboxSize * 2),
+                                     math.random(-hitboxSize * 2, hitboxSize * 2)
+                                 )
+                                 local adjustedMousePos = mousePos + jitter
+                 
+                                 local currentMousePosX, currentMousePosY = getMousePosition()
+                                 local moveSpeed = 0.1  
+                 
+                                 local newX = currentMousePosX + (adjustedMousePos.X - currentMousePosX) * moveSpeed
+                                 local newY = currentMousePosY + (adjustedMousePos.Y - currentMousePosY) * moveSpeed
+                 
+                                 newX = math.clamp(newX, 0, Camera.ViewportSize.X)
+                                 newY = math.clamp(newY, 0, Camera.ViewportSize.Y)
+                 
+                                 -- Make sure the knife isn't being used
+                                 if os.clock() - lastClickTime >= Delay and not isUsingKnife() then
+                                     lastClickTime = os.clock()
+                 
+                                     local mouseX, mouseY = getMousePosition()
+                                     mouse1click(mouseX, mouseY)
+                                 end
+                             end
+                         end
+                     end
+                 end
                  
                  local function TriggerAction()
                      if TargetPlayer and TargetPlayer.Character then
@@ -359,7 +348,6 @@ if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId
                                  aimAtTargetBody(TargetPlayer)
                              end
                          else
-                             
                              TargetPlayer = nil
                          end
                      end
@@ -386,6 +374,7 @@ if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId
                          TriggerAction()  
                      end
                  end)
+                 
                  
                  
                  
@@ -737,15 +726,17 @@ if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId
                                                      end
                  
                                                      if shared.Global.Camera.Configurations.Value ~= 0 then
-                                                         if predictedPosition then
-                                                             local currentPosition = Camera.CFrame.Position
-                                                             local randomness = math.random(95, 105) / 100
-                                                             local smoothFactor = shared.Global.Camera.Configurations.Value * randomness
-                 
-                                                             local DesiredCFrame = CFrame.new(currentPosition, predictedPosition)
-                                                             Camera.CFrame = Camera.CFrame:Lerp(DesiredCFrame, smoothFactor)
-                                                         end
-                                                     end
+                                                        if predictedPosition then
+                                                            local currentPosition = Camera.CFrame.Position
+                                                            local randomness = math.random(95, 105) / 100
+                                                           
+                                                            local smoothFactor = (shared.Global.Camera.Configurations.Value * randomness) * 0.1  
+                                                    
+                                                            local DesiredCFrame = CFrame.new(currentPosition, predictedPosition)
+                                                            Camera.CFrame = Camera.CFrame:Lerp(DesiredCFrame, smoothFactor)
+                                                        end
+                                                    end
+                                                    
                                                  end
                                              end
                                          end
