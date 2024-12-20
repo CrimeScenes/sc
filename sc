@@ -394,7 +394,7 @@
                  
                  local FIRST_PERSON_THRESHOLD = 5
                  local THIRD_PERSON_THRESHOLD = 10
-                 local DETECTION_SCALE = 0.03
+                 local DETECTION_SCALE = 0.07
                  
                 
                  local MAX_TARGET_DISTANCE = shared.Global.Camera.Distance or 30  
