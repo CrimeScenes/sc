@@ -1,4 +1,4 @@
- if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId == 7213786345 then
+ if game.PlaceId == 113959651351894 or game.PlaceId == 2788229376 or game.PlaceId == 7213786345 or game.PlaceId == 78600196575483 then
                 
 
 
